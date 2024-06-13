@@ -41,6 +41,7 @@ set(srv_files
   "srv/AutoFlag.srv"
   "srv/TemperatureRange.srv"
   "srv/Palette.srv"
+  "srv/RadiationParameters.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -63,14 +64,15 @@ target_link_libraries(optris_imager_node
   irimageprocessing
   ircore
   udev
-  usb-1.0)
-
+  usb-1.0) 
 target_link_libraries(optris_colorconvert_node 
   irimager
   irimageprocessing
   ircore
   udev
-  usb-1.0)
+  usb-1.0
+  #libirimager # Ensure this matches your library name
+  )
 
 install(TARGETS
   optris_imager_node

@@ -1,8 +1,12 @@
 #include "OptrisImager.h"
 
-
+/**#include "direct_binding.h"
+#include "irdirectsdk_defs.h"
+#include "EvoIRFrameMetadata.h"
+*/
 #include <chrono>
-
+/**#include "optris_drivers2/srv/RadiationParameters.hpp"
+ */
 namespace optris_drivers2
 {
 
@@ -14,6 +18,8 @@ OptrisImager::OptrisImager(evo::IRDevice* dev, evo::IRDeviceParams params) : Nod
   _imager.init(&params, dev->getFrequency(), dev->getWidth(), dev->getHeight(), dev->controlledViaHID());
   _imager.setClient(this);
 
+  /**_imager.setRadiationParameters(1.0, 1.0, 25.0);
+   */
   _bufferRaw = new unsigned char[dev->getRawBufferSize()];
 
   auto qos = rclcpp::QoS(
@@ -72,6 +78,8 @@ OptrisImager::OptrisImager(evo::IRDevice* dev, evo::IRDeviceParams params) : Nod
 
   // provide service to change temperature range
   _sTemp  = this->create_service<optris_drivers2::srv::TemperatureRange> ("temperature_range", std::bind(&OptrisImager::onSetTemperatureRange, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+
+  _sSetRadiationParams = this->create_service<optris_drivers2::srv::RadiationParameters> ("set_radiation_parameters", std::bind(&OptrisImager::onSetRadiationParameters, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
 
   _img_cnt = 0;
 
@@ -206,5 +214,29 @@ void OptrisImager::onSetTemperatureRange(const std::shared_ptr<rmw_request_id_t>
 
   res->success = validParam;
 }
+ 
+void OptrisImager::onSetRadiationParameters(
+    const std::shared_ptr<rmw_request_id_t> request_header,
+    const std::shared_ptr<optris_drivers2::srv::RadiationParameters::Request> req,
+    const std::shared_ptr<optris_drivers2::srv::RadiationParameters::Response> res)
+{
+    (void)request_header; // Suppress unused variable warning
+
+    // Accessing the request parameters
+    float emissivity = req->emissivity;
+    float transmissivity = req->transmissivity;
+    float ambient_temperature = req->ambient_temperature;
+
+    // Set the radiation parameters using the imager object
+    _imager.setRadiationParameters(emissivity, transmissivity, ambient_temperature);
+
+    // Assuming setRadiationParameters() returns void, set success to true
+    res->success = true;
+
+    // Logging for debugging
+    RCLCPP_INFO(get_logger(), "Set radiation parameters: Emissivity=%f, Transmissivity=%f, Ambient Temperature=%f",
+                emissivity, transmissivity, ambient_temperature);
+}
+
 
 }
